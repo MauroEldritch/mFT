@@ -16,9 +16,9 @@ Configure your OpenSea API Key in the `config.rb` file:
 $sea_apikey = "YOUR_API_KEY_HERE"
 ```
 
-## mFT C2 (mFTC2.rb)
+## mFT Exfil Server (mFTExfil.rb)
 
-The C2 will start a web server which will log any data exfiltrated by mFT clients.
+The exfiltration tool will start a web server which will log any data exfiltrated by mFT clients.
 
 Custom address and port can be configured in the `config.rb` file:
 
