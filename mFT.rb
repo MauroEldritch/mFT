@@ -103,7 +103,7 @@ end
 def explain_c2_order(order, target="")
     case order
     when "ip_address"
-        puts "[🎯] Will use #{target} as a target C2 Server.".light_yellow
+        puts "[🎯] Will use #{target} as a target exfiltration Server.".light_yellow
     when "actions"
         commands = target.split(",")
         commands.each do | command |
@@ -130,7 +130,7 @@ end
 
 def generate_payload()
     puts "Generating a new payload:\n".light_red
-    print "[?] C2 address (with http:// or https://): ".light_red
+    print "[?] Exfiltration address (with http:// or https://): ".light_red
     c2_addr = gets.chomp
     print "\n[?] Custom Unix commands (separated by ;): ".light_red
     commands = gets.chomp
