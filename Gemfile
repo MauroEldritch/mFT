@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 gem 'colorize'
+gem 'zsteg'
 gem 'sinatra'
 gem 'terminal-table'
 gem 'thin'

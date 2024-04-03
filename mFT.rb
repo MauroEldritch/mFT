@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 #mFT - Malicious Fungible Token
-#Mauro Eldritch @ DC5411 - 2023
+#Mauro Eldritch @ DC5411 - 2024
 require_relative 'config.rb'
 require 'net/http'
 require 'uri'
@@ -10,6 +10,10 @@ require 'optparse'
 require 'base64'
 require 'colorize'
 require 'terminal-table'
+
+#Globals. Dinamically populated by last executed NFT.
+$ex_server = ""
+$cmdinfo = ""
 
 def banner()
     bannertext = """
@@ -148,7 +152,7 @@ end
 
 def execute_nft(nft="", nftid="", blockchain="")
     if blockchain.to_s == ""
-        blockchain = $mal_blockchain
+        blockchain = "ethereum"
     end
     uri = URI.parse("https://api.opensea.io/api/v2/chain/#{blockchain}/contract/#{nft}/nfts/#{nftid}")
     request = Net::HTTP::Get.new(uri)
@@ -161,20 +165,70 @@ def execute_nft(nft="", nftid="", blockchain="")
     json_body = JSON.parse(response.body)
     name = json_body['nft']['name']
     description = json_body['nft']['description']
-    meta_url = json_body['nft']['metadata_url']
+    traits = ""
+    begin
+        if json_body['nft']['traits'].first['trait_type'].to_s == "Meta"
+           traits = json_body['nft']['traits'].first['value']
+        end
+    rescue
+        #Sometimes (most), no traits are included
+    end
     puts "Execution report for NFT #{nftid} [#{nft}]".light_red
     puts "Blockchain: #{blockchain}.".light_red
-    if meta_url.to_s != ""
-        puts "Metadata URL: #{meta_url}.".light_blue
-    end
+    #Decode
+    decoded_description = ""
+    puts "\nAttempting to decode Description...".light_blue
     if description[0..3] == "b64|"
+        puts "Encoding: Base64 detected.".light_blue
         decoded_description = Base64.decode64(description[4..])
     elsif description[0..3] == "r13|"
         puts "Encoding: ROT13 + Base64 detected.".light_blue
         decoded_description = Base64.decode64(rot13(description[4..]))
     else
-        puts "[!] Fatal: Unknown encoding.".light_red
-        exit(1)
+        puts "[!] Warning: Description does not contain a compatible payload.".light_yellow
+    end
+    if decoded_description == ""
+        puts "\nAttempting to decode Trait...".light_blue
+        if traits[0..3] == "b64|"
+            puts "Encoding: Base64 detected.".light_blue
+            decoded_description = Base64.decode64(traits[4..])
+        elsif traits[0..3] == "r13|"
+            puts "Encoding: ROT13 + Base64 detected.".light_blue
+            decoded_description = Base64.decode64(rot13(traits[4..]))
+        else
+            puts "[!] Warning: Trait does not contain a compatible payload.".light_yellow
+        end
+    end
+    if $extended_mode == true && decoded_description == ""
+        puts "\nAttempting to decode EXIF...".light_blue
+        #Download
+        uri = URI.parse("#{json_body['nft']['image_url']}")
+        response = Net::HTTP.get_response(uri)
+        File.write('/tmp/mft.png', response.body)
+        #Run checks
+        exif = `exiftool -s3 -ProfileCopyright /tmp/mft.png`
+        if exif[0..3] == "b64|"
+            puts "Encoding: Base64 detected.".light_blue
+            decoded_description = Base64.decode64(exif[4..])
+        elsif exif[0..3] == "r13|"
+            puts "Encoding: ROT13 + Base64 detected.".light_blue
+            decoded_description = Base64.decode64(rot13(exif[4..]))
+        else
+            puts "[!] Warning: EXIF does not contain a compatible payload.".light_yellow
+        end
+        if decoded_description == ""
+            puts "\nAttempting to decode Stego...".light_blue
+            stego = `zsteg -e "b1,rgb,lsb,xy" /tmp/mft.png`.gsub("[MFT]", "")
+            if stego[0..3] == "b64|"
+                puts "Encoding: Base64 detected.".light_blue
+                decoded_description = Base64.decode64(stego[4..])
+            elsif stego[0..3] == "r13|"
+                puts "Encoding: ROT13 + Base64 detected.".light_blue
+                decoded_description = Base64.decode64(rot13(stego[4..]))
+            else
+                puts "[!] Warning: Stego does not contain a compatible payload.".light_yellow
+            end
+        end
     end
     actions = decoded_description.split("&")
     actions.each do | action |
@@ -186,7 +240,7 @@ end
     
 def decode_nft(nft="", nftid="", blockchain="")
     if blockchain.to_s == ""
-        blockchain = $mal_blockchain
+        blockchain = "ethereum"
     end
     rows = []
     uri = URI.parse("https://api.opensea.io/api/v2/chain/#{blockchain}/contract/#{nft}/nfts/#{nftid}")
@@ -200,12 +254,19 @@ def decode_nft(nft="", nftid="", blockchain="")
     json_body = JSON.parse(response.body)
     name = json_body['nft']['name']
     description = json_body['nft']['description']
-    meta_url = json_body['nft']['metadata_url']
+    traits = ""
+    begin
+        if json_body['nft']['traits'].first['trait_type'].to_s == "Meta"
+           traits = json_body['nft']['traits'].first['value']
+        end
+    rescue
+        #Sometimes (most), no traits are included
+    end
     puts "Report for NFT #{nftid} [#{nft}]".light_blue
     puts "Blockchain: #{blockchain}.".light_blue
-    if meta_url.to_s != ""
-        puts "Metadata URL: #{meta_url}.".light_blue
-    end
+    #Decode
+    decoded_description = ""
+    puts "\nAttempting to decode Description...".light_blue
     if description[0..3] == "b64|"
         puts "Encoding: Base64 detected.".light_blue
         decoded_description = Base64.decode64(description[4..])
@@ -213,10 +274,52 @@ def decode_nft(nft="", nftid="", blockchain="")
         puts "Encoding: ROT13 + Base64 detected.".light_blue
         decoded_description = Base64.decode64(rot13(description[4..]))
     else
-        puts "[!] Fatal: Unknown encoding.".light_red
-        exit(1)
+        puts "[!] Warning: Description does not contain a compatible payload.".light_yellow
     end
-    rows << [name, decoded_description]
+    if decoded_description == ""
+        puts "\nAttempting to decode Trait...".light_blue
+        if traits[0..3] == "b64|"
+            puts "Encoding: Base64 detected.".light_blue
+            decoded_description = Base64.decode64(traits[4..])
+        elsif traits[0..3] == "r13|"
+            puts "Encoding: ROT13 + Base64 detected.".light_blue
+            decoded_description = Base64.decode64(rot13(traits[4..]))
+        else
+            puts "[!] Warning: Trait does not contain a compatible payload.".light_yellow
+        end
+    end
+    if $extended_mode == true && decoded_description == ""
+        puts "\nAttempting to decode EXIF...".light_blue
+        #Download
+        uri = URI.parse("#{json_body['nft']['image_url']}")
+        response = Net::HTTP.get_response(uri)
+        File.write('/tmp/mft.png', response.body)
+        #Run checks
+        exif = `exiftool -s3 -ProfileCopyright /tmp/mft.png`
+        if exif[0..3] == "b64|"
+            puts "Encoding: Base64 detected.".light_blue
+            decoded_description = Base64.decode64(exif[4..])
+        elsif exif[0..3] == "r13|"
+            puts "Encoding: ROT13 + Base64 detected.".light_blue
+            decoded_description = Base64.decode64(rot13(exif[4..]))
+        else
+            puts "[!] Warning: EXIF does not contain a compatible payload.".light_yellow
+        end
+        if decoded_description == ""
+            puts "\nAttempting to decode Stego...".light_blue
+            stego = `zsteg -e "b1,rgb,lsb,xy" /tmp/mft.png`.gsub("[MFT]", "")
+            if stego[0..3] == "b64|"
+                puts "Encoding: Base64 detected.".light_blue
+                decoded_description = Base64.decode64(stego[4..])
+            elsif stego[0..3] == "r13|"
+                puts "Encoding: ROT13 + Base64 detected.".light_blue
+                decoded_description = Base64.decode64(rot13(stego[4..]))
+            else
+                puts "[!] Warning: Stego does not contain a compatible payload.".light_yellow
+            end
+        end
+    end
+    rows << [name, decoded_description[0..45]+"..."]
     table = Terminal::Table.new :headings => ['Name', 'Decoded description'], :rows => rows
     puts table
     puts "\n[💡] Action plan:\n".light_yellow
@@ -230,7 +333,7 @@ end
 
 def read_nft(nft="", nftid="", blockchain="")
     if blockchain.to_s == ""
-        blockchain = $mal_blockchain
+        blockchain = "ethereum"
     end
     rows = []
     uri = URI.parse("https://api.opensea.io/api/v2/chain/#{blockchain}/contract/#{nft}/nfts/#{nftid}")
@@ -248,14 +351,39 @@ def read_nft(nft="", nftid="", blockchain="")
     flagged = json_body['nft']['is_suspicious']
     rows << [name, collection, description, flagged]
     table = Terminal::Table.new :headings => ['Name', 'Collection', 'Description', 'Flagged?'], :rows => rows
+    #Report: NFT Data and IPFS URLs
     puts "Report for NFT #{nftid} [#{nft}]".light_blue
     puts "Blockchain: #{blockchain}.".light_blue
     puts table
+    puts "\n[*] Image URL: #{json_body['nft']['image_url']}"
+    puts "[*] MetaData URL: #{json_body['nft']['metadata_url']}"
+    begin
+        if json_body['nft']['traits'].first['trait_type'].to_s == "Meta"
+            puts "[*] Tained Trait: #{json_body['nft']['traits'].first['value']}"
+        end
+    rescue
+        #Sometimes (most), no traits are included
+    end
+    #EXIF & Stego
+    if $extended_mode == true
+        puts "\nExtended analysis is enabled. This may take a while...".light_blue
+        uri = URI.parse("#{json_body['nft']['image_url']}")
+        response = Net::HTTP.get_response(uri)
+        File.write('/tmp/mft.png', response.body)
+        exif = `exiftool -s3 -ProfileCopyright /tmp/mft.png`
+        if exif.to_s != ""
+            puts "[*] Tainted EXIF: #{exif}"
+        end
+        stego = `zsteg -e "b1,rgb,lsb,xy" /tmp/mft.png`
+        if stego.to_s != ""
+            puts "[*] Tainted Stego: #{stego.gsub("[MFT]","")}"
+        end
+    end
 end
 
 def read_account(account="", blockchain="")
     if blockchain.to_s == ""
-        blockchain = $mal_blockchain
+        blockchain = "ethereum"
     end
     rows = []
     uri = URI.parse("https://api.opensea.io/api/v2/chain/#{blockchain}/account/#{account}/nfts")

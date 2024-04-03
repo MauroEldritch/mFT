@@ -1,13 +1,30 @@
 # mFT - Malicious Fungible Token
 
-mFT is a Web3 based C2 PoC that leverages Non-Fungible Tokens (NFTs) as a mechanism for hosting and transmitting commands to compromised or infected hosts.
+mFT is a Web3 based C2 PoC that leverages Non-Fungible Tokens (NFTs) as a mechanism for hosting and transmitting commands to compromised or infected hosts abusing common fields like "Description", Traits, EXIF metadata and steganographically hidden messages.
+
+## A note about this PoC
+
+This PoC does not conduct any malicious activity (options for wiping or encrypting drives are merely present to illustrate capabilities). 
+
+I fully understand that OpenSea NFT's are *not stored on-chain* but rather *made resilient by using IPFS, FileCoin and other technologies*. 
+
+This is just a PoC to see how far things could go on a *off-chain* NFT system. Otherwise, I would have jumped straight away into developing a fully *on-chain* PoC (which surely would have been easier and less painful).
+
+- Steganographic messages were generated using https://stylesuxx.github.io/steganography/. 
+- ROT-13 function originally written by zhisme.
 
 ## Requirements
 
 Install dependencies:
 
 ```bash
+#Gems. Note: Using thin 1.8.2 requires rack to be under v3.0.0, which conflicts with using the newer sinatra (4.0).
 bundle install
+
+#Exiftool
+apt install exiftool
+
+#Make sure both zsteg and exiftool binaries are referenced on your PATH
 ```
 
 Configure your OpenSea API Key in the `config.rb` file:

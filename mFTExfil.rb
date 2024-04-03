@@ -2,9 +2,9 @@
 #mFT - Malicious Fungible Token C2
 #Mauro Eldritch @ Birmingham Cyber Arms LTD - 2023
 require_relative 'config.rb'
+require 'thin'
 require 'base64'
 require 'sinatra'
-require 'thin'
 require 'colorize'
 
 def banner()
