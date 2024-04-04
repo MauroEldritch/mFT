@@ -2,7 +2,6 @@
 #mFT - Malicious Fungible Token C2
 #Mauro Eldritch @ Birmingham Cyber Arms LTD - 2023
 require_relative 'config.rb'
-require 'thin'
 require 'base64'
 require 'sinatra'
 require 'colorize'
@@ -27,7 +26,6 @@ configure do
     set :port, $ex_default_port
     set :show_exceptions, false
     set :server_settings, :timeout => 5000    
-    set :server, "thin"
 end
 
 get('/') {

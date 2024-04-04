@@ -367,16 +367,20 @@ def read_nft(nft="", nftid="", blockchain="")
     #EXIF & Stego
     if $extended_mode == true
         puts "\nExtended analysis is enabled. This may take a while...".light_blue
-        uri = URI.parse("#{json_body['nft']['image_url']}")
-        response = Net::HTTP.get_response(uri)
-        File.write('/tmp/mft.png', response.body)
-        exif = `exiftool -s3 -ProfileCopyright /tmp/mft.png`
-        if exif.to_s != ""
-            puts "[*] Tainted EXIF: #{exif}"
-        end
-        stego = `zsteg -e "b1,rgb,lsb,xy" /tmp/mft.png`
-        if stego.to_s != ""
-            puts "[*] Tainted Stego: #{stego.gsub("[MFT]","")}"
+        begin
+            uri = URI.parse("#{json_body['nft']['image_url']}")
+            response = Net::HTTP.get_response(uri)
+            File.write('/tmp/mft.png', response.body)
+            exif = `exiftool -s3 -ProfileCopyright /tmp/mft.png`
+            if exif.to_s != ""
+                puts "[*] Tainted EXIF: #{exif}"
+            end
+            stego = `zsteg -e "b1,rgb,lsb,xy" /tmp/mft.png`
+            if stego.to_s != ""
+                puts "[*] Tainted Stego: #{stego.gsub("[MFT]","")}"
+            end
+        rescue
+            puts "[*] No EXIF/Stego payloads found."
         end
     end
 end
