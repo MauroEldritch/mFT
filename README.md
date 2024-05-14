@@ -2,6 +2,13 @@
 
 mFT is a Web3 based C2 PoC that leverages Non-Fungible Tokens (NFTs) as a mechanism for hosting and transmitting commands to compromised or infected hosts abusing common fields like "Description", Traits, EXIF metadata and steganographically hidden messages.
 
+## Conferences
+
+|#| Date | Conference | Video | Slides |
+|---|---|---|---|---|
+| 1 | 2024 | InsomniHack Switzerland | https://www.youtube.com/watch?v=8EAaFNiiV2c&list=PLcAhMYXnWf9twDPjT1G3vyIzHxoQ-X8XK&index=29 | https://download.scrt.ch/insomnihack/ins24-slides/Malicious%20Fungible%20Tokens%20-%20InsomniHack.pdf |
+
+
 ## A note about this PoC
 
 This PoC does not conduct any malicious activity (options for wiping or encrypting drives are merely present to illustrate capabilities). 
